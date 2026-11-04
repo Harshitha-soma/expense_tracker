@@ -6,28 +6,31 @@ import '../models/expense.dart';
 class ExpenseProvider with ChangeNotifier {
   List<Expense> _expenses = [];
   bool _isLoading = false;
+  double _monthlyBudget = 500.0; // Default monthly budget limit
 
   List<Expense> get expenses => [..._expenses];
   bool get isLoading => _isLoading;
+  double get monthlyBudget => _monthlyBudget;
 
   ExpenseProvider() {
-    loadExpenses();
+    loadData();
   }
 
-  // Load expenses from device storage
-  Future<void> loadExpenses() async {
+  // Load expenses and budget from device storage
+  Future<void> loadData() async {
     _isLoading = true;
     notifyListeners();
 
     try {
       final prefs = await SharedPreferences.getInstance();
       final String? expensesString = prefs.getString('saved_expenses');
-
+      _monthlyBudget = prefs.getDouble('monthly_budget') ?? 500.0;
+      
       if (expensesString != null) {
         final List<dynamic> decodedData = jsonDecode(expensesString);
         _expenses = decodedData.map((item) => Expense.fromMap(item)).toList();
       } else {
-        // Default sample data if nothing is saved yet
+        // Initial sample data
         _expenses = [
           Expense(
             id: '1',
@@ -35,7 +38,7 @@ class ExpenseProvider with ChangeNotifier {
             amount: 45.50,
             category: 'Food',
             date: DateTime.now().subtract(const Duration(days: 1)),
-            note: 'Bought weekly vegetables and milk',
+            note: 'Weekly vegetables and milk',
           ),
           Expense(
             id: '2',
@@ -49,25 +52,33 @@ class ExpenseProvider with ChangeNotifier {
         await _saveToStorage();
       }
     } catch (e) {
-      debugPrint('Error loading expenses: $e');
+      debugPrint('Error loading data: $e');
     }
 
     _isLoading = false;
     notifyListeners();
   }
 
-  // Save current expenses list to device storage
+  // Save to device storage
   Future<void> _saveToStorage() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final String encodedData = jsonEncode(_expenses.map((e) => e.toMap()).toList());
       await prefs.setString('saved_expenses', encodedData);
+      await prefs.setDouble('monthly_budget', _monthlyBudget);
     } catch (e) {
-      debugPrint('Error saving expenses: $e');
+      debugPrint('Error saving data: $e');
     }
   }
 
-  // Add new expense and save
+  // Update budget goal
+  Future<void> updateBudget(double newBudget) async {
+    _monthlyBudget = newBudget;
+    notifyListeners();
+    await _saveToStorage();
+  }
+
+  // Add new expense
   Future<void> addExpense(String title, double amount, String category, DateTime date, String note) async {
     final newExpense = Expense(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -82,20 +93,28 @@ class ExpenseProvider with ChangeNotifier {
     await _saveToStorage();
   }
 
-  // Delete expense and update storage
+  // Delete expense
   Future<void> deleteExpense(String id) async {
     _expenses.removeWhere((expense) => expense.id == id);
     notifyListeners();
     await _saveToStorage();
   }
 
-  // Calculate totals per category for the Summary Screen
+  // Calculate current month's total spending
+  double get currentMonthTotal {
+    final now = DateTime.now();
+    return _expenses
+        .where((e) => e.date.year == now.year && e.date.month == now.month)
+        .fold(0.0, (sum, item) => sum + item.amount);
+  }
+
+  // Category totals for summary
   Map<String, double> get categoryTotals {
     Map<String, double> totals = {};
     for (var expense in _expenses) {
       totals.update(
         expense.category,
-            (existingValue) => existingValue + expense.amount,
+        (existingValue) => existingValue + expense.amount,
         ifAbsent: () => expense.amount,
       );
     }
