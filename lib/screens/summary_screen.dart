@@ -14,6 +14,16 @@ class SummaryScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Expense Summary'),
+        actions: [
+          // HOME BUTTON ADDED HERE
+          IconButton(
+            icon: const Icon(Icons.home),
+            tooltip: 'Go to Home',
+            onPressed: () {
+              Navigator.popUntil(context, (route) => route.isFirst);
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -27,7 +37,7 @@ class SummaryScreen extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween, // <-- FIXED HERE
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
                       'Total This Month',
