@@ -15,8 +15,18 @@ class DetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Expense Details'),
         actions: [
+          // HOME BUTTON ADDED HERE
+          IconButton(
+            icon: const Icon(Icons.home),
+            tooltip: 'Go to Home',
+            onPressed: () {
+              Navigator.popUntil(context, (route) => route.isFirst);
+            },
+          ),
+          // DELETE BUTTON
           IconButton(
             icon: const Icon(Icons.delete, color: Colors.redAccent),
+            tooltip: 'Delete Expense',
             onPressed: () {
               showDialog(
                 context: context,
@@ -61,7 +71,7 @@ class DetailScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  '₹${expense.amount.toStringAsFixed(2)}', // Rupee symbol applied
+                  '₹${expense.amount.toStringAsFixed(2)}',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
                 ),
                 const Divider(height: 30),
